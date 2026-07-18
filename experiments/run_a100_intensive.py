@@ -214,6 +214,8 @@ def main() -> int:
     ap.add_argument("--bootstrap", type=int, default=2000)
     ap.add_argument("--neural", action="store_true")
     ap.add_argument("--raw-windows-per-subject", type=int, default=200)
+    ap.add_argument("--shard", type=int, default=0, help="this shard index (0-based)")
+    ap.add_argument("--n-shards", type=int, default=1, help="total shards for multi-GPU data parallelism")
     ap.add_argument("--out", type=Path, default=Path("hf_export"))
     ap.add_argument("--hf-repo", default=None)
     ap.add_argument("--dry-run", action="store_true")
@@ -232,9 +234,16 @@ def main() -> int:
     per_stage = {}          # stage -> list of (future, past, clusters)
     edge_rows, raw_samples = [], []
     seen = set()
+    # shard subjects across processes (one GPU each) for data-parallel speedup
+    all_subjects = sorted({_PSG.match(p).group(1)[3:5] for p in psgs})
+    shard_subjects = {s for k, s in enumerate(all_subjects) if k % args.n_shards == args.shard}
+    if args.n_shards > 1:
+        print(f"shard {args.shard}/{args.n_shards}: {len(shard_subjects)} subjects")
     for psg in psgs:
         rec = _PSG.match(psg).group(1)
         subj = rec[3:5]
+        if subj not in shard_subjects:
+            continue
         if subj in seen or (args.max_subjects and len(seen) >= args.max_subjects):
             if args.max_subjects and len(seen) >= args.max_subjects:
                 break
