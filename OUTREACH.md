@@ -25,14 +25,19 @@ reads as "real" versus "underpowered."
 Validation: it recovers the analytic directed-information graph of a
 linear-Gaussian VAR to <0.002 bits, and on a chain A→B→C it drives the mediated
 A→C edge to zero while a pairwise (correlation-style) view certifies A→C
-spuriously. On real simultaneous Sleep-EDF channels (frontal/occipital EEG, EOG,
-EMG) it recovers directed asymmetries — e.g., occipital→frontal EEG far exceeding
-the reverse.
+spuriously.
 
-It drops straight onto your EGG channel: point me at a stomach-brain recording
-and it will certify how many bits the gastric rhythm contributes to the *future*
-cortical state, conditioned on the cortex's own past — the directional statement
-Rao's paper leaves open.
+On real simultaneous **multi-organ** sleep recordings (MIT-BIH slpdb: EEG, ECG,
+arterial BP, respiration; 18 recordings, ~308k anchors) it recovers textbook
+autonomic couplings *with direction* — respiration→heart-rate (RSA),
+heart-rate→BP — and, notably, a certified **top-down EEG→heart-rate** edge while
+heart-rate→EEG does *not* clear the floor. That directional asymmetry is exactly
+what correlation and phase-amplitude coupling cannot resolve. (Figure attached.)
+
+It drops straight onto your EGG channel: swap in the gastric rhythm and it
+certifies how many bits the gut contributes to the *future* cortical state,
+conditioned on the cortex's own past and the other organs — the directional,
+direct-vs-mediated statement Rao's paper leaves open.
 
 Code, validation, and figures: [GitHub link]. Compute isn't a constraint on my
 end. Could I have 20 minutes to show how it maps onto Akshita's data?
@@ -48,8 +53,9 @@ directionality analysis on any recording you can share.
 
 1. **Push the repo to GitHub** (public) and paste the link — a live repo beats a
    zip attachment. (`neuroforecast`; the zip is a fallback.)
-2. **Attach two figures:** `fig_multiorgan_digraph.png` (the method: direct vs
-   mediated) and `fig_sleep_edf_digraph.png` (real data).
+2. **Attach two figures:** `fig_slpdb_digraph.png` (HERO — real autonomic
+   organs: EEG→HR, HR→BP, RSA) and `fig_multiorgan_digraph.png` (the method: direct
+   vs mediated on synthetic ground truth). `fig_sleep_edf_digraph.png` is backup.
 3. **Honesty guardrails — do not drift:**
    - The Sleep-EDF effects are **small** (sub-0.01 bits) and "certified" at ~500k
      anchors is a low bar; if he asks, say so plainly. The value is the *method +
