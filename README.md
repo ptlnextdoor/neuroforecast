@@ -1,9 +1,18 @@
-# neuroforecast — certified directed information for neural forecasting
+# neuroforecast — certified directed information for multi-organ neural coupling
+
+**Motivation (a gap the target lab stated in its own words).** The stomach-brain
+sleep study (Rao et al., bioRxiv 2025.11.13.686572) writes: *"These analyses are
+inherently correlational, precluding inference about directionality. Future work
+can employ … directed information [Quinn, Kiyavash, Coleman 2015]."* Their entire
+coupling result is cross-correlation and phase-amplitude coupling; they name
+directed information as the fix, citing their own lab's theory. `neuroforecast`
+is that fix, made **finite-sample-certified** and **multi-organ**.
 
 **One question, answered honestly:** *does the causal history of an added channel
 `X` carry information about the future of a neural signal `Y`, beyond `Y`'s own
 past and known nuisances `Z` — and is that contribution statistically real or
-merely underpowered?*
+merely underpowered?* And its multivariate form: *which organ drives which,
+**directly** vs. through a mediator, across simultaneously recorded signals?*
 
 That quantity is the causally-conditioned directed information (transfer entropy)
 
@@ -36,12 +45,30 @@ standard metrics. `neuroforecast` distinguishes them, with two commitments:
 Both the linear and the neural estimator are checked against the **closed-form**
 linear-Gaussian CDI, so the numbers are trustworthy before any real data.
 
-## Two estimators
+## The multi-organ contribution: a certified directed-information graph
+
+`neuroforecast.graph` extends pairwise CDI to the **causally-conditioned
+directed-information graph** of Quinn-Kiyavash-Coleman (2015): for signals
+{EEG, EGG, EKG, EMG}, edge *i → j* is `I( X_j(t) ; X_i(past) | X_j(past),
+X_{other}(past) )`. Conditioning on **all other organs' pasts** separates a
+**direct** edge from a **mediated** one — the exact thing correlation and PAC
+cannot do. Each edge is certified with a subject-cluster bootstrap lower bound.
+
+Validated against the analytic DI graph of a linear-Gaussian VAR (`test_graph.py`):
+on a chain A→B→C it recovers the direct edges to <0.002 bits and drives the
+mediated A→C edge to zero, while a pairwise (correlational-style) view certifies
+a **spurious** A→C. On a simulated four-organ sleep system it recovers
+EKG→EGG→EEG_sigma and correctly refuses the mediated EKG→EEG_sigma edge
+(`experiments/demo_multiorgan.py`).
+
+![multi-organ directed-information graph](experiments/fig_multiorgan_digraph.png)
+
+## Two edge estimators
 
 | module | estimator | when |
 |---|---|---|
-| `neuroforecast.linear` | cross-fitted ridge plug-in | linear-Gaussian coupling; instant; the analytic-validated baseline |
-| `neuroforecast.neural` | causal TCN + heteroscedastic Gaussian head, cross-fitted | nonlinear coupling on raw causal windows / band-power trajectories; the GPU workload |
+| `neuroforecast.linear` | cross-fitted ridge plug-in | linear-Gaussian coupling; instant; analytic-validated |
+| `neuroforecast.neural` | causal TCN + held-out residual variance, cross-fitted | nonlinear coupling on raw causal windows / trajectories; the GPU workload |
 
 The neural estimator encodes the raw causal *trajectory* of `X` with a dilated
 causal 1-D convolutional network (a TCN) — preserving the fine-timescale
