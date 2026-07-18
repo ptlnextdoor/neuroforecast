@@ -4,3 +4,4 @@ scikit-learn>=1.3
 torch>=2.0
 matplotlib>=3.7
 edfio>=0.4
+datasets>=2.14
