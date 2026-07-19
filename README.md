@@ -1,129 +1,133 @@
-# neuroforecast — certified directed information for multi-organ neural coupling
+# neuroforecast
 
-**Motivation (a gap the target lab stated in its own words).** The stomach-brain
-sleep study (Rao et al., bioRxiv 2025.11.13.686572) writes: *"These analyses are
-inherently correlational, precluding inference about directionality. Future work
-can employ … directed information [Quinn, Kiyavash, Coleman 2015]."* Their entire
-coupling result is cross-correlation and phase-amplitude coupling; they name
-directed information as the fix, citing their own lab's theory. `neuroforecast`
-is that fix, made **finite-sample-certified** and **multi-organ**.
+**Certified causally-conditioned directed-information graphs for multi-organ
+neural coupling.** A finite-sample, leakage-controlled implementation of directed
+information graphs [Quinn, Kiyavash & Coleman, *IEEE TIT* 2015] that separates
+**direct** from **mediated** coupling and certifies each edge with a bootstrap
+lower bound and a detection-power floor.
 
-**One question, answered honestly:** *does the causal history of an added channel
-`X` carry information about the future of a neural signal `Y`, beyond `Y`'s own
-past and known nuisances `Z` — and is that contribution statistically real or
-merely underpowered?* And its multivariate form: *which organ drives which,
-**directly** vs. through a mediator, across simultaneously recorded signals?*
-
-That quantity is the causally-conditioned directed information (transfer entropy)
-
-```
-CDI = I( Y_future ; X_past | Z ),     Z = ( Y_past , nuisance ).
-```
-
-It is exactly what a claim like *"adding the gastric channel improves prediction
-of a future sleep/brain state"* needs to become rigorous: not an AUC or an R²,
-but a certified number of **bits**, with a proven floor below which a null is
-uninformative.
+---
 
 ## Why this exists
 
-Finite-sample directed-information estimators are biased and overstate coupling;
-deep models on EEG routinely inflate performance through subject leakage. A
-"prediction improved" result can be real signal, extra parameters, shared
-nuisance, or an underpowered artifact — and those are not distinguished by
-standard metrics. `neuroforecast` distinguishes them, with two commitments:
+Recent work on simultaneous stomach–brain electrophysiology in human sleep
+(Rao et al., "Dynamic stomach-brain electrical coupling during human sleep," 2026)
+states its own methodological gap directly:
 
-1. **Cross-fitting** — CDI is the *held-out* predictive-log-likelihood gap of a
-   model given `(X, Z)` over a model given `Z` alone. An uninformative channel
-   contributes ≈0, not a positive bias. For a fixed model class the estimate is a
-   *lower bound* on the true CDI — the honest direction.
-2. **A certified detection floor** — a subject-cluster bootstrap gives a one-sided
-   95% lower bound; a calibration injects *known* directed information at graded
-   strengths and reports the smallest true CDI whose bound clears zero. That is
-   the instrument's floor at the given sample size.
+> *"These analyses are inherently correlational, precluding inference about
+> directionality. Future work can employ passive causal inference methods on
+> simultaneously recorded waveforms … such as Granger causality or directed
+> information."*
 
-Both the linear and the neural estimator are checked against the **closed-form**
-linear-Gaussian CDI, so the numbers are trustworthy before any real data.
+The coupling results there are cross-correlation and phase-amplitude coupling.
+This repository is that named next step — directed information — built to be
+**finite-sample-certified** and **multi-organ**, so a directed edge comes with an
+honest statement of whether it is real or merely underpowered.
 
-## The multi-organ contribution: a certified directed-information graph
+## The estimand
 
-`neuroforecast.graph` extends pairwise CDI to the **causally-conditioned
-directed-information graph** of Quinn-Kiyavash-Coleman (2015): for signals
-{EEG, EGG, EKG, EMG}, edge *i → j* is `I( X_j(t) ; X_i(past) | X_j(past),
-X_{other}(past) )`. Conditioning on **all other organs' pasts** separates a
-**direct** edge from a **mediated** one — the exact thing correlation and PAC
-cannot do. Each edge is certified with a subject-cluster bootstrap lower bound.
+For simultaneously recorded signals $\{X_1,\dots,X_m\}$, the directed edge
+$i \to j$ is the causally-conditioned directed information
 
-Validated against the analytic DI graph of a linear-Gaussian VAR (`test_graph.py`):
-on a chain A→B→C it recovers the direct edges to <0.002 bits and drives the
-mediated A→C edge to zero, while a pairwise (correlational-style) view certifies
-a **spurious** A→C. On a simulated four-organ sleep system it recovers
-EKG→EGG→EEG_sigma and correctly refuses the mediated EKG→EEG_sigma edge
-(`experiments/demo_multiorgan.py`).
+$$\mathrm{DI}(i \to j \,\|\, \text{rest}) \;=\; I\big(X_j(t)\,;\,X_i(\text{past}) \,\big|\, X_j(\text{past}),\, X_{k\neq i,j}(\text{past})\big).$$
 
-![multi-organ directed-information graph](experiments/fig_multiorgan_digraph.png)
+Conditioning on **all other organs' pasts** is what distinguishes a *direct* edge
+from one *mediated* through a third organ: if $X_i$ influences $X_j$ only via
+$X_k$, then conditioning on $X_k$'s past drives $\mathrm{DI}(i\to j\,\|\,\text{rest})$
+to zero — while a pairwise correlation, PAC, or even a pairwise transfer entropy
+still lights up.
 
-## Two edge estimators
+Two honesty guarantees:
 
-| module | estimator | when |
-|---|---|---|
-| `neuroforecast.linear` | cross-fitted ridge plug-in | linear-Gaussian coupling; instant; analytic-validated |
-| `neuroforecast.neural` | causal TCN + held-out residual variance, cross-fitted | nonlinear coupling on raw causal windows / trajectories; the GPU workload |
+1. **Cross-fitted estimation** — each edge is the held-out predictive
+   log-likelihood gain of a model given $(X_i,\text{rest})$ over one given
+   $\text{rest}$ alone, so an uninformative channel contributes $\approx 0$, not a
+   positive bias. For a fixed model class the estimate is a *lower bound* on the
+   true DI.
+2. **A certified detection floor** — a subject/record-cluster bootstrap gives a
+   one-sided 95% lower bound; a calibration injects *known* DI at graded strengths
+   and reports the smallest true value whose bound clears zero. Below that floor a
+   null is uninformative; above it, a null is a real negative.
 
-The neural estimator encodes the raw causal *trajectory* of `X` with a dilated
-causal 1-D convolutional network (a TCN) — preserving the fine-timescale
-precursor structure that a single window-average destroys — and reports a
-heteroscedastic predictive density so its log-likelihood is a proper score.
+Both linear (cross-fitted ridge plug-in) and neural (causal TCN + held-out
+residual variance) estimators are provided; both are checked against the
+closed-form linear-Gaussian DI.
 
-## Validation (against analytic ground truth)
+---
 
-```
-strength |  true CDI |   est CDI |   95% LCB | certified
-    0.00 |   +0.0000 |   -0.0003 |   -0.0004 | no
-    0.10 |   +0.0072 |   +0.0054 |   +0.0034 | YES
-    0.35 |   +0.0834 |   +0.0845 |   +0.0748 | YES
-    0.80 |   +0.3568 |   +0.3507 |   +0.3348 | YES
-```
+## It works — validated against analytic ground truth
 
-![detection-power](experiments/fig_cdi_detection_power.png)
+The estimator recovers the closed-form DI of a linear-Gaussian VAR, reads $\approx 0$
+on a null channel, and its detection floor is explicit:
 
-## Real-data application (Sleep-EDF)
+![detection-power calibration](experiments/fig_cdi_detection_power.png)
 
-`experiments/run_sleep_edf.py` asks whether the causal EEG **band-power
-trajectory** carries directed information about **future delta power** (a
-continuous target that is *not* pinned by an oracle current stage — the estimand
-where residual directed EEG information can actually live), beyond delta's own
-recent past and time-of-night. Certified CDI, linear and neural.
+On a chain $A\to B\to C$ it recovers the two direct edges and **drives the
+mediated $A\to C$ edge to zero**, while a pairwise (correlation-style) view
+certifies $A\to C$ *spuriously*:
 
-## Layout
+![method: direct vs mediated](experiments/fig_multiorgan_digraph.png)
 
-```
-neuroforecast/          linear.py  neural.py  calibration.py
-experiments/            demo_gut_brain.py  run_sleep_edf.py
-figures/                plot_detection_power.py
-tests/                  test_linear.py  test_neural.py   (validate vs analytic)
-run_a100.sh             cluster entry point
-```
+---
 
-## Run
+## It runs on real multi-organ recordings
+
+**Autonomic organs during sleep** (MIT-BIH Polysomnographic Database, `slpdb`:
+EEG, heart rate, arterial BP, respiration; 18 recordings, ~308k anchors). The
+certified graph recovers *known* autonomic couplings **with direction** —
+respiration→heart-rate (respiratory sinus arrhythmia), heart-rate→BP — and finds
+a certified **top-down EEG→heart-rate** edge while heart-rate→EEG does **not**
+clear the floor. That directional asymmetry is exactly what correlation and PAC
+cannot resolve.
+
+![directed information: autonomic organs](experiments/fig_slpdb_digraph_heatmap.png)
+
+*(rows = source / causal past, columns = destination / future; red outline =
+certified, bootstrap 95% LCB > 0; diagonal masked.)*
+
+For reference, the same pipeline on Sleep-EDF channels (frontal/occipital EEG,
+EOG, EMG; 78 subjects, 6.4M anchors) — a within-brain/eye/muscle system:
+
+![directed information: Sleep-EDF](experiments/fig_sleep_edf_digraph_heatmap.png)
+
+---
+
+## Direct line to the stomach–brain data
+
+The estimator is signal-agnostic. Point it at a stomach–brain recording with
+`Y_future = future cortical state`, `X_past = gastric (EGG) history`,
+`Z = (cortical history, other organs, time)`, and `clusters = subject`, and it
+certifies **how many bits the gastric rhythm contributes to the future cortical
+state, conditioned on the cortex's own past** — the directional statement the 2026
+paper's Section 3.6 leaves open. The same estimand applies to the cephalic-phase
+efferent (brain→gut) question in the lab's Parkinson's program.
+
+## Honest scope
+
+- Effects on the public data above are **small** (sub-0.01 bits); at hundreds of
+  thousands of anchors "certified" is an easy bar. The contribution is the
+  **directionality + the direct-vs-mediated distinction + the certification**, not
+  the magnitude.
+- Directed information is not new, and the graph formulation is Quinn–Kiyavash–
+  Coleman (2015). What is here: a **finite-sample-certified, multi-organ**
+  implementation with a detection-power floor, validated end-to-end.
+- The stomach–brain result requires the corresponding recordings; this repo
+  demonstrates the method and its validation, not that result.
+
+## Run it
 
 ```bash
 pip install -r requirements.txt
 export PYTHONPATH=.
-python tests/test_linear.py          # linear CDI vs analytic
-python tests/test_neural.py          # neural CDI vs analytic (must match)
-python experiments/demo_gut_brain.py # calibration + detection-floor figure
-# real data:
-python experiments/run_sleep_edf.py --data-dir <sleep-cassette> --neural
-# or the whole thing on a cluster:
-DATA_DIR=<sleep-cassette> ./run_a100.sh
+python tests/test_linear.py     # linear DI vs analytic ground truth
+python tests/test_graph.py      # graph: recovers structure, kills the mediated edge
+python experiments/run_slpdb_graph.py --max-records 18   # the autonomic graph above
 ```
 
-## Design notes
+Layout: `neuroforecast/` (`linear.py`, `neural.py`, `graph.py`, `calibration.py`),
+`experiments/` (runners + figures), `tests/` (analytic-validation gates).
 
-- **Directed, not merely conditional.** `Z` must include `Y`'s own past for CDI
-  to be transfer entropy rather than a static conditional MI.
-- **Lower bound, stated as such.** A richer model class can only raise the
-  estimate; a certified positive is therefore conservative.
-- **Cluster bootstrap = the leakage control.** Resampling whole subjects (not
-  samples) is what makes the lower bound honest across people.
+## Reference
+
+Quinn, Kiyavash, Coleman. *Directed Information Graphs.* IEEE Transactions on
+Information Theory, 61(12), 2015.
