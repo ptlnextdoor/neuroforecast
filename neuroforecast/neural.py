@@ -11,11 +11,13 @@ neural capacity, keeping the same two honesty guarantees:
 
 Estimand and estimator (identical in spirit to the linear plug-in):
 
-    CDI = E[ log q1(Y | X_past, Z) - log q0(Y | Z) ] / ln 2,
+    CDI = 0.5 log2( v0 / v1 ),
 
-where q0, q1 are heteroscedastic Gaussian predictive densities produced by neural
-networks, trained on a disjoint fold and evaluated out-of-fold. For a fixed
-network class this is a lower bound on the true CDI -- the honest direction.
+where v0, v1 are the out-of-fold residual variances of two neural mean predictors
+of Y_future -- a homoscedastic (fixed-variance) Gaussian predictive density,
+trained on a disjoint fold and evaluated out-of-fold. (A per-sample variance head
+is deliberately avoided; see MeanHead below.) For a fixed network class this is a
+lower bound on the true CDI -- the honest direction.
 
 Architecture (the part that is new for raw neural signals):
 
@@ -23,12 +25,13 @@ Architecture (the part that is new for raw neural signals):
         -> CausalConvEncoder  (dilated, causal 1-D convolutions: a TCN)
         -> embedding e_x
     Z (baseline: target's own past + nuisance)  -> e_z = MLP(Z)
-    [e_x, e_z] -> HeteroscedasticHead -> (mu, log_sigma2) of Y_future    (model q1)
-    [e_z]      -> HeteroscedasticHead -> (mu, log_sigma2) of Y_future    (model q0)
+    [e_x, e_z] -> MeanHead -> mu of Y_future    (model q1)
+    [e_z]      -> MeanHead -> mu of Y_future    (model q0)
 
 The baseline q0 sees only Z; the full model q1 additionally sees the encoded
-causal history of X. Their held-out predictive-log-likelihood gap is the certified
-directed information X contributes about the future of Y beyond its own past.
+causal history of X. Their held-out residual-variance ratio (0.5 log2 v0/v1) is
+the certified directed information X contributes about the future of Y beyond its
+own past -- the same estimand and formula as the linear plug-in.
 
 CPU-trainable at small scale (validation); designed to scale to full cohorts on
 GPU (see `run_a100.sh`). PyTorch, no Lightning, no framework.

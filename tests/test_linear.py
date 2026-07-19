@@ -1,7 +1,7 @@
 """Validation: the estimator recovers the analytic linear-Gaussian CDI, and
 reports ~0 (with LCB<=0) when the candidate channel carries no information.
 
-Run: python test_cdi.py
+Run: python tests/test_linear.py
 """
 
 import numpy as np

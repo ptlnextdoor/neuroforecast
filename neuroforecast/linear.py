@@ -36,7 +36,7 @@ Two design commitments make the number trustworthy rather than optimistic:
    have found this much, and there is none."
 
 Linear-Gaussian channels have a closed-form CDI, so the estimator is validated
-against analytic ground truth (see `analytic_cdi_gaussian` and `test_cdi.py`).
+against analytic ground truth (see `analytic_cdi_gaussian` and `tests/test_linear.py`).
 
 No framework, ~200 lines, numpy + scikit-learn.
 """
