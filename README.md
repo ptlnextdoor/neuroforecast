@@ -8,6 +8,24 @@ lower bound and a detection-power floor.
 
 ---
 
+## The headline result
+
+One table, from the benchmark's confounder and mediation scenarios. Every method
+below has full detection power on the true edge; the column that separates them is
+how often they **falsely certify** an edge that carries zero directed information.
+
+| method | detects the real edge | false-certifies a null edge | mediated edge called direct |
+| --- | --- | --- | --- |
+| pairwise correlation | yes | **95%** | **100%** |
+| pairwise transfer entropy | yes | 44% | -- |
+| **neuroforecast (conditional DI)** | yes | **0%** | **0%** |
+
+Same detection power, opposite honesty. A pairwise method buys its sensitivity by
+inventing edges; conditioning on the rest of the system gets the same detection
+for free. Numbers are scored independently by
+[kahlus-bench](https://github.com/ptlnextdoor/kahlus-bench) at n=30 draws, 4096
+samples, seed 0 (see [Independent benchmark](#independent-benchmark)).
+
 ## Why this exists
 
 Recent work on simultaneous stomach–brain electrophysiology in human sleep
