@@ -143,6 +143,13 @@ pairwise correlation false-certifies up to ~95% of null edges. The benchmark
 reads ground truth; the estimator never does — so the pass is an independent
 check, not a self-report.
 
+![kahlus-bench detection-power vs false-certify sweep](figures/kahlus_bench_sweep.png)
+
+*Across the coupling sweep, neuroforecast (conditional DI) and pairwise methods
+reach the same detection power on the true edge, but only the pairwise methods
+climb a false-positive rate on the null edges. Figure and CSVs are reproducible
+from the [kahlus-bench](https://github.com/ptlnextdoor/kahlus-bench) repo.*
+
 ## Run it
 
 ```bash
@@ -164,3 +171,15 @@ Layout: `neuroforecast/` (`linear.py`, `neural.py`, `graph.py`, `calibration.py`
 
 Quinn, Kiyavash, Coleman. *Directed Information Graphs.* IEEE Transactions on
 Information Theory, 61(12), 2015.
+
+## Related: the latent-field engine
+
+neuroforecast is the coupling-estimator lane. The forecasting/model lane is
+[Kahlus-V1](https://github.com/ptlnextdoor/Kahlus-V1), a leakage-controlled
+neural-translation benchmark and model scaffold. Its honest headline is a split
+verdict: the recovered Kahlus v1 model wins future forecasting but loses masked
+reconstruction to a linear ridge, and the benchmark reports both.
+
+![Kahlus v1 versus standard EEG baselines](figures/kahlus_v1_baseline_ranking.png)
+
+Happy to walk through either.
