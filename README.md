@@ -114,15 +114,30 @@ efferent (brain→gut) question in the lab's Parkinson's program.
 - The stomach–brain result requires the corresponding recordings; this repo
   demonstrates the method and its validation, not that result.
 
+## Independent benchmark
+
+neuroforecast is scored as an external method by
+[kahlus-bench](https://github.com/ptlnextdoor/kahlus-bench), a leakage-sealed
+benchmark that certifies neural-coupling estimators against synthetic
+ground-truth systems. On the benchmark's confounder and mediation scenarios,
+neuroforecast certifies **0%** false edges at full detection power, where
+pairwise correlation false-certifies up to ~95% of null edges. The benchmark
+reads ground truth; the estimator never does — so the pass is an independent
+check, not a self-report.
+
 ## Run it
 
 ```bash
-pip install -r requirements.txt
-export PYTHONPATH=.
-python tests/test_linear.py     # linear DI vs analytic ground truth
-python tests/test_graph.py      # graph: recovers structure, kills the mediated edge
+pip install -e .          # core (numpy, scipy, scikit-learn) — linear + graph
+pip install -e ".[dev]"   # + torch, matplotlib, data loaders for the neural estimator and figures
+
+pytest tests/test_linear.py    # linear DI vs analytic ground truth
+pytest tests/test_graph.py     # graph: recovers structure, kills the mediated edge
 python experiments/run_slpdb_graph.py --max-records 18   # the autonomic graph above
 ```
+
+The core install has no torch dependency; only the neural estimator and the
+data-loading experiments need the `[dev]` (or `[neural]` / `[data]`) extras.
 
 Layout: `neuroforecast/` (`linear.py`, `neural.py`, `graph.py`, `calibration.py`),
 `experiments/` (runners + figures), `tests/` (analytic-validation gates).

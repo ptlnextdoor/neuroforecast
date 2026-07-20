@@ -1,6 +1,6 @@
 """Certified directed-information graph over multiple simultaneous signals.
 
-The stomach-brain sleep study (Rao et al. 2025) states its own gap: the analyses
+The stomach-brain sleep study (Rao et al. 2026) states its own gap: the analyses
 are *correlational* (cross-correlation, phase-amplitude coupling), "precluding
 inference about directionality," and names **directed information** [Quinn,
 Kiyavash, Coleman 2015, "Directed information graphs"] as the fix. This module is

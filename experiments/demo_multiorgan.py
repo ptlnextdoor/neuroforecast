@@ -1,5 +1,5 @@
 """Multi-organ certified directed-information graph -- aimed at the stomach-brain
-sleep setting (Rao et al. 2025), which currently reports only correlation/PAC.
+sleep setting (Rao et al. 2026), which currently reports only correlation/PAC.
 
 We simulate four simultaneously-recorded organ signals with a KNOWN directed
 structure motivated by the sleep physiology:

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuroforecast"
+version = "0.1.0"
+description = "Certified causally-conditioned directed-information graphs for multi-organ neural coupling"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+]
+
+[project.optional-dependencies]
+neural = ["torch>=2.0"]
+figures = ["matplotlib>=3.7"]
+data = ["edfio>=0.4", "datasets>=2.14"]
+dev = ["pytest>=7", "torch>=2.0", "matplotlib>=3.7", "edfio>=0.4", "datasets>=2.14"]
+
+[project.urls]
+Homepage = "https://github.com/ptlnextdoor/neuroforecast"
+
+[tool.setuptools]
+packages = ["neuroforecast"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
