@@ -103,27 +103,27 @@ def _plot(rows, floor):
     est = [r[2] for r in rows]
     lcb = [r[3] for r in rows]
 
-    fig, ax = plt.subplots(figsize=(5.2, 3.4), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(5.5, 4.5), constrained_layout=True)
     lo = min(min(lcb), 0) - 0.02
     ax.axhspan(lo, 0, color="0.92", zorder=0)
     ax.axhline(0, color="0.4", lw=0.8)
-    ax.plot(true, true, ":", color="0.5", lw=1.0, label="analytic CDI (truth)")
-    ax.plot(true, est, "-o", color="#1f77b4", label="estimated CDI")
+    ax.plot(true, true, color="black", linestyle="--", linewidth=1.0, label="truth")
+    ax.plot(true, est, marker="o", markersize=4, linewidth=1.5, label="estimated CDI")
     ax.fill_between(true, lcb, [max(e, l) for e, l in zip(est, lcb)],
-                    color="#1f77b4", alpha=0.2)
-    ax.plot(true, lcb, "--", color="#1f77b4", lw=1.0, label="95% LCB (cluster bootstrap)")
+                    color="C0", alpha=0.15)
+    ax.plot(true, lcb, marker="o", markersize=4, linewidth=1.5,
+            label="95% LCB (cluster bootstrap)")
     if floor is not None:
-        ax.axvline(floor, color="#d62728", lw=1.0, ls="--")
+        ax.axvline(floor, color="C3", lw=1.0, ls="--")
         ax.text(floor, ax.get_ylim()[1], " detection floor",
-                color="#d62728", fontsize=8, va="top")
+                color="C3", fontsize=8, va="top")
     ax.set_xlabel("true directed information  I(Y_future ; X_past | Z)  [bits]")
     ax.set_ylabel("recovered CDI [bits]")
-    ax.set_title("Certified directed-information detection floor")
-    ax.legend(fontsize=7, frameon=False)
-    for spine in ("top", "right"):
-        ax.spines[spine].set_visible(False)
+    ax.set_title("certified DI detection floor  (above floor = real negative)")
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=8)
     out = Path(__file__).parent / "fig_cdi_detection_power"
-    fig.savefig(f"{out}.png", dpi=200)
+    fig.savefig(f"{out}.png", dpi=130)
     fig.savefig(f"{out}.pdf")
     print(f"saved {out}.png / .pdf")
 
